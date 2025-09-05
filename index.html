@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Badminton Match Scheduler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .player-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 50px;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .player-card:active {
+            transform: scale(0.98);
+        }
+
+        .player-card.selected {
+            border-color: #4CAF50;
+            background: #e8f5e8;
+        }
+
+        .player-name {
+            font-weight: 500;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .rank-badge {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            min-width: 30px;
+        }
+
+        .rank-badge.selected {
+            background: #4CAF50;
+        }
+
+        .selected-count {
+            background: #e3f2fd;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1976d2;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .schedule-table th {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .schedule-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        .schedule-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .match-number {
+            font-weight: bold;
+            color: #667eea;
+            white-space: nowrap;
+            min-width: 120px;
+        }
+
+        .player-cell {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .schedule-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .schedule-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .schedule-btn:active {
+            transform: scale(0.95);
+        }
+
+        .schedule-btn.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        @media (min-width: 600px) {
+            .players-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+            
+            .content {
+                padding: 30px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .schedule-table th,
+            .schedule-table td {
+                padding: 8px 6px;
+                font-size: 13px;
+            }
+            
+            .match-number {
+                min-width: 100px;
+            }
+            
+            .player-card {
+                padding: 12px;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏸 Badminton Match Scheduler</h1>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h3>Select Players</h3>
+                <div id="selected-count" class="selected-count">
+                    Select 4-6 players to generate schedule
+                </div>
+                <div id="players-grid" class="players-grid">
+                    <!-- Players will be generated here -->
+                </div>
+            </div>
+            
+            <div id="schedule-section" class="section" style="display: none;">
+                <h3>Match Schedule</h3>
+                <div id="schedule-selector" class="schedule-selector">
+                    <!-- Schedule options will be generated here -->
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="schedule-table" class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Match</th>
+                                <th>Player</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedule-body">
+                            <!-- Schedule will be generated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="error-message" class="error-message" style="display: none;">
+                Please select 4-6 players to generate a schedule.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BadmintonScheduler {
+            constructor() {
+                this.players = [];
+                this.schedules = {};
+                this.selectedPlayers = [];
+                this.currentScheduleIndex = 0;
+                this.allSchedules = {};
+                this.init();
+            }
+
+            init() {
+                this.loadData();
+                this.generateAllSchedules();
+                this.renderPlayers();
+                this.bindEvents();
+            }
+
+            loadData() {
+                // Player data with fallback
+                this.players = [
+                    { name: "Tyler Nava", id: "50009269", originalIndex: 0 },
+                    { name: "Celina Boot", id: "4994154", originalIndex: 1 },
+                    { name: "Lucas Pennings", id: "50007000", originalIndex: 2 },
+                    { name: "Cas Veenstra", id: "10002125", originalIndex: 3 },
+                    { name: "Lisa van der Brugghen", id: "50009270", originalIndex: 4 },
+                    { name: "Mara Stolp", id: "5004949", originalIndex: 5 }
+                ];
+
+                // Schedule patterns
+                this.schedules = {
+                    "4": [1, 4, 3, 2, 1, 4, 3, 2, 1, 4, 3, 2],
+                    "5": [1, 4, 3, 2, 1, 5, 3, 2, 1, 4, 5, 2],
+                    "6": [1, 6, 3, 2, 5, 4, 3, 1, 6, 4, 5, 2]
+                };
+            }
+
+            generateAllSchedules() {
+                this.allSchedules = { ...this.schedules };
+                this.generateAlternativeSchedules();
+            }
+
+            generateAlternativeSchedules() {
+                // Alternative schedules for variety
+                this.allSchedules["4_alt1"] = [2, 1, 4, 3, 2, 1, 4, 3, 2, 1, 4, 3];
+                this.allSchedules["4_alt2"] = [1, 3, 2, 4, 1, 3, 2, 4, 1, 3, 2, 4];
+                this.allSchedules["5_alt1"] = [2, 1, 4, 3, 2, 5, 1, 4, 3, 2, 5, 1];
+                this.allSchedules["5_alt2"] = [1, 3, 2, 4, 3, 1, 5, 2, 4, 3, 1, 5];
+                this.allSchedules["6_alt1"] = [2, 1, 4, 3, 6, 5, 2, 1, 4, 3, 6, 5];
+                this.allSchedules["6_alt2"] = [1, 3, 2, 4, 5, 6, 3, 1, 4, 2, 6, 5];
+            }
+
+            renderPlayers() {
+                const container = document.getElementById('players-grid');
+                container.innerHTML = '';
+
+                this.players.forEach((player, index) => {
+                    const card = this.createPlayerCard(player, index);
+                    container.appendChild(card);
+                });
+            }
+
+            createPlayerCard(player, index) {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.dataset.index = index;
+                
+                card.innerHTML = `
+                    <span class="player-name">${this.escapeHtml(player.name)}</span>
+                    <div class="rank-badge"></div>
+                `;
+
+                return card;
+            }
+
+            bindEvents() {
+                const container = document.getElementById('players-grid');
+                const scheduleSelector = document.getElementById('schedule-selector');
+
+                if (container) {
+                    container.addEventListener('click', this.handlePlayerClick.bind(this));
+                }
+
+                if (scheduleSelector) {
+                    scheduleSelector.addEventListener('click', this.handleScheduleClick.bind(this));
+                }
+            }
+
+            handlePlayerClick(event) {
+                const card = event.target.closest('.player-card');
+                if (!card) return;
+
+                const playerIndex = parseInt(card.dataset.index);
+                if (!isNaN(playerIndex)) {
+                    this.togglePlayer(playerIndex);
+                }
+            }
+
+            handleScheduleClick(event) {
+                const btn = event.target.closest('.schedule-btn');
+                if (!btn || !btn.dataset.schedule) return;
+
+                this.selectSchedule(btn.dataset.schedule);
+            }
+
+            togglePlayer(playerIndex) {
+                if (playerIndex < 0 || playerIndex >= this.players.length) return;
+
+                const player = this.players[playerIndex];
+                const existingIndex = this.findPlayerIndex(player);
+
+                if (existingIndex >= 0) {
+                    this.removePlayer(existingIndex);
+                } else if (this.selectedPlayers.length < 6) {
+                    this.addPlayer(player);
+                }
+
+                this.updateDisplay();
+            }
+
+            findPlayerIndex(player) {
+                return this.selectedPlayers.findIndex(p => p.originalIndex === player.originalIndex);
+            }
+
+            removePlayer(index) {
+                this.selectedPlayers.splice(index, 1);
+            }
+
+            addPlayer(player) {
+                this.selectedPlayers.push(player);
+            }
+
+            updateDisplay() {
+                this.updatePlayerDisplay();
+                this.updateScheduleDisplay();
+            }
+
+            updatePlayerDisplay() {
+                const cards = document.querySelectorAll('.player-card');
+                
+                cards.forEach((card, index) => {
+                    if (index >= this.players.length) return;
+                    
+                    const player = this.players[index];
+                    const selectedIndex = this.findPlayerIndex(player);
+                    const isSelected = selectedIndex >= 0;
+                    const rankBadge = card.querySelector('.rank-badge');
+                    
+                    this.updateCardAppearance(card, rankBadge, isSelected, selectedIndex);
+                });
+
+                this.updateSelectedCount();
+            }
+
+            updateCardAppearance(card, rankBadge, isSelected, selectedIndex) {
+                if (isSelected) {
+                    card.classList.add('selected');
+                    rankBadge.classList.add('selected');
+                    rankBadge.textContent = selectedIndex + 1;
+                } else {
+                    card.classList.remove('selected');
+                    rankBadge.classList.remove('selected');
+                    rankBadge.textContent = '';
+                }
+            }
+
+            updateSelectedCount() {
+                const countElement = document.getElementById('selected-count');
+                if (!countElement) return;
+
+                const count = this.selectedPlayers.length;
+                const countInfo = this.getCountInfo(count);
+                
+                countElement.textContent = countInfo.text;
+                countElement.style.background = countInfo.background;
+                countElement.style.color = countInfo.color;
+            }
+
+            getCountInfo(count) {
+                if (count === 0) {
+                    return {
+                        text: 'Select 4-6 players to generate schedule',
+                        background: '#e3f2fd',
+                        color: '#1976d2'
+                    };
+                } else if (count < 4) {
+                    return {
+                        text: `${count} selected - Need at least 4 players`,
+                        background: '#fff3e0',
+                        color: '#f57c00'
+                    };
+                } else if (count <= 6) {
+                    return {
+                        text: `${count} players selected - Ready to generate schedule`,
+                        background: '#e8f5e8',
+                        color: '#2e7d32'
+                    };
+                } else {
+                    return {
+                        text: 'Maximum 6 players allowed',
+                        background: '#ffebee',
+                        color: '#c62828'
+                    };
+                }
+            }
+
+            updateScheduleDisplay() {
+                const scheduleSection = document.getElementById('schedule-section');
+                const errorMessage = document.getElementById('error-message');
+                
+                const isValidCount = this.isValidPlayerCount();
+                
+                if (isValidCount) {
+                    this.showScheduleSection(scheduleSection, errorMessage);
+                } else {
+                    this.hideScheduleSection(scheduleSection, errorMessage);
+                }
+            }
+
+            isValidPlayerCount() {
+                return this.selectedPlayers.length >= 4 && this.selectedPlayers.length <= 6;
+            }
+
+            showScheduleSection(scheduleSection, errorMessage) {
+                if (scheduleSection) scheduleSection.style.display = 'block';
+                if (errorMessage) errorMessage.style.display = 'none';
+                this.renderScheduleSelector();
+                this.renderSchedule();
+            }
+
+            hideScheduleSection(scheduleSection, errorMessage) {
+                if (scheduleSection) scheduleSection.style.display = 'none';
+                
+                const shouldShowError = this.selectedPlayers.length > 0 && !this.isValidPlayerCount();
+                if (errorMessage) {
+                    errorMessage.style.display = shouldShowError ? 'block' : 'none';
+                }
+            }
+
+            renderScheduleSelector() {
+                const container = document.getElementById('schedule-selector');
+                if (!container) return;
+
+                container.innerHTML = '';
+                
+                const availableSchedules = this.getAvailableSchedules(this.selectedPlayers.length);
+                
+                availableSchedules.forEach((scheduleKey, index) => {
+                    const btn = this.createScheduleButton(scheduleKey, index);
+                    container.appendChild(btn);
+                });
+            }
+
+            createScheduleButton(scheduleKey, index) {
+                const btn = document.createElement('div');
+                btn.className = 'schedule-btn';
+                btn.dataset.schedule = scheduleKey;
+                
+                const label = this.getScheduleLabel(scheduleKey);
+                btn.textContent = label;
+                
+                if (index === this.currentScheduleIndex) {
+                    btn.classList.add('active');
+                }
+                
+                return btn;
+            }
+
+            getScheduleLabel(scheduleKey) {
+                const isAlternative = scheduleKey.includes('_alt');
+                if (!isAlternative) return 'Standard';
+                
+                const altNumber = scheduleKey.split('_alt')[1];
+                return `Alternative ${altNumber}`;
+            }
+
+            getAvailableSchedules(playerCount) {
+                const schedules = [];
+                
+                // Add standard schedule
+                if (this.allSchedules[playerCount.toString()]) {
+                    schedules.push(playerCount.toString());
+                }
+                
+                // Add alternative schedules
+                Object.keys(this.allSchedules).forEach(key => {
+                    if (key.startsWith(`${playerCount}_alt`)) {
+                        schedules.push(key);
+                    }
+                });
+                
+                return schedules;
+            }
+
+            selectSchedule(scheduleKey) {
+                const availableSchedules = this.getAvailableSchedules(this.selectedPlayers.length);
+                this.currentScheduleIndex = availableSchedules.indexOf(scheduleKey);
+                
+                this.updateScheduleButtons(scheduleKey);
+                this.renderSchedule(scheduleKey);
+            }
+
+            updateScheduleButtons(activeScheduleKey) {
+                document.querySelectorAll('.schedule-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                const activeBtn = document.querySelector(`[data-schedule="${activeScheduleKey}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                }
+            }
+
+            getMatchLabel(matchIndex) {
+                const labels = {
+                    1: "Single 1",
+                    2: "Dubbel 1 - A",
+                    3: "Dubbel 1 - B",
+                    4: "Single 2",
+                    5: "Dubbel 2 - A",
+                    6: "Dubbel 2 - B",
+                    7: "Single 3",
+                    8: "Dubbel 3 - A",
+                    9: "Dubbel 3 - B",
+                    10: "Single 4",
+                    11: "Dubbel 4 - A",
+                    12: "Dubbel 4 - B"
+                };
+                return labels[matchIndex] || `Match ${matchIndex}`;
+            }
+
+            renderSchedule(scheduleKey = null) {
+                const tbody = document.getElementById('schedule-body');
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+                
+                const playerCount = this.selectedPlayers.length;
+                if (!scheduleKey) {
+                    scheduleKey = playerCount.toString();
+                }
+                
+                const schedule = this.allSchedules[scheduleKey];
+                if (!schedule) return;
+
+                schedule.forEach((playerRank, matchIndex) => {
+                    const row = this.createScheduleRow(playerRank, matchIndex);
+                    tbody.appendChild(row);
+                });
+            }
+
+            createScheduleRow(playerRank, matchIndex) {
+                const row = document.createElement('tr');
+                const player = this.getPlayerByRank(playerRank);
+                
+                row.innerHTML = `
+                    <td class="match-number">${this.getMatchLabel(matchIndex + 1)}</td>
+                    <td class="player-cell">${player ? this.escapeHtml(player.name) : 'N/A'}</td>
+                `;
+                
+                return row;
+            }
+
+            getPlayerByRank(rank) {
+                return this.selectedPlayers[rank - 1] || null;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                new BadmintonScheduler();
+            } catch (error) {
+                console.error('Failed to initialize BadmintonScheduler:', error);
+            }
+        });
+    </script>
+</body>
+</html>
